@@ -1,0 +1,11 @@
+# 1. Gunakan image dasar PHP versi CLI
+FROM php:8.4-cli
+
+# 2. Instal depedensi sistem dasar dan external PHP
+RUN apt-get update && apt-get install -y libzib-dev libzip-dev zip unzip && docker-php-ext-install pdo pdo_mysql zip
+
+# 3. Instal Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 4. Tetapkan direktori kerja di dalam container
+WORKDIR /var/www
