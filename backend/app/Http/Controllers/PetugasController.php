@@ -70,16 +70,62 @@ class PetugasController extends Controller
     {
         $search = $request->input('search');
 
-        $pengembalians = Pengembalian::with(['peminjaman.user', 'peminjaman.detailPinjams.alat', 'petugas'])
+        $peminjamans = Peminjaman::with(['user', 'detailPinjams.alat'])
+            ->where('status', 'dipinjam')
             ->when($search, function ($query, $search) {
-                return $query->whereHas('peminjaman.user', function ($q) use ($search) {
+                return $query->whereHas('user', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%");
-                })->orWhere('kondisi_kembali', 'like', "%{$search}%");
+                });
             })
             ->latest()
             ->get();
 
-        return view('petugas.pengembalian.index', compact('pengembalians', 'search'));
+        return view('petugas.pengembalian.index', compact('peminjamans', 'search'));
+    }
+
+    public function terimaPengembalian(Request $request, $id)
+    {
+        $request->validate([
+            'kondisi_kembali' => 'required|string|max:255',
+            'denda' => 'required|integer|min:0',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $peminjaman = Peminjaman::with('detailPinjams')->lockForUpdate()->findOrFail($id);
+
+            if ($peminjaman->status !== 'dipinjam') {
+                throw new Exception("Data ditolak. Peminjaman ini berstatus '{$peminjaman->status}', bukan 'dipinjam'.");
+            }
+
+            $tglKembaliPlan = \Carbon\Carbon::parse($peminjaman->tanggal_kembali_plan ?? $peminjaman->tgl_kembali_plan)->startOfDay();
+            $hariIni = \Carbon\Carbon::now()->startOfDay();
+            $statusPeminjamanBaru = $hariIni->greaterThan($tglKembaliPlan) ? 'telat' : 'dikembalikan';
+
+            Pengembalian::create([
+                'peminjaman_id' => $peminjaman->id,
+                'tanggal_kembali' => now(),
+                'kondisi_kembali' => $request->kondisi_kembali,
+                'denda' => $request->denda ?? 0,
+                'petugas_id' => auth()->id(),
+            ]);
+
+            $peminjaman->update(['status' => $statusPeminjamanBaru]);
+
+            foreach ($peminjaman->detailPinjams as $detail) {
+                $alat = Alat::lockForUpdate()->findOrFail($detail->alat_id);
+                $alat->increment('stok', $detail->jumlah);
+            }
+
+            DB::commit();
+
+            return redirect()->route('petugas.pengembalian.index')->with('success', 'Pengembalian berhasil diproses.');
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        }
     }
 
     private function buildLaporanFilters(Request $request): array

@@ -62,6 +62,7 @@ Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petu
 
     // Pengembalian & Laporan
     Route::get('/pengembalian', [PetugasController::class, 'indexPengembalian'])->name('pengembalian.index');
+    Route::post('/pengembalian/{id}/terima', [PetugasController::class, 'terimaPengembalian'])->name('pengembalian.terima');
     Route::get('/laporan', [PetugasController::class, 'indexLaporan'])->name('laporan.index');
     Route::get('/laporan/pdf', [PetugasController::class, 'pdfLaporan'])->name('laporan.pdf');
 });
