@@ -130,8 +130,9 @@ class PetugasController extends Controller
 
     private function buildLaporanFilters(Request $request): array
     {
-        $search = trim((string) $request->input('search', ''));
+        $allowedStatuses = ['semua', 'diajukan', 'dipinjam', 'dikembalikan', 'telat'];
         $status = $request->input('status', 'semua');
+        $status = in_array($status, $allowedStatuses, true) ? $status : 'semua';
         $tanggalMulai = $request->input('tanggal_mulai');
         $tanggalSelesai = $request->input('tanggal_selesai');
 
@@ -150,7 +151,6 @@ class PetugasController extends Controller
         }
 
         return [
-            'search' => $search,
             'status' => $status,
             'tanggal_mulai' => $tanggalMulai,
             'tanggal_selesai' => $tanggalSelesai,
@@ -158,15 +158,10 @@ class PetugasController extends Controller
         ];
     }
 
-    private function getLaporanPeminjamanQuery($search = null, $status = 'semua', $tanggalMulai = null, $tanggalSelesai = null)
+    private function getLaporanPeminjamanQuery($status = 'semua', $tanggalMulai = null, $tanggalSelesai = null)
     {
         return Peminjaman::with(['user', 'detailPinjams.alat', 'pengembalian'])
-            ->when($search, function ($query, $search) {
-                return $query->whereHas('user', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                })->orWhere('status', 'like', "%{$search}%");
-            })
-            ->when($status && $status !== 'semua', function ($query, $status) {
+            ->when($status && $status !== 'semua', function ($query) use ($status) {
                 return $query->where('status', $status);
             })
             ->when($tanggalMulai && ! $tanggalSelesai, function ($query) use ($tanggalMulai) {
@@ -176,7 +171,8 @@ class PetugasController extends Controller
                 return $query->whereDate('tanggal_pinjam', '<=', $tanggalSelesai);
             })
             ->when($tanggalMulai && $tanggalSelesai, function ($query) use ($tanggalMulai, $tanggalSelesai) {
-                return $query->whereBetween(DB::raw('DATE(tanggal_pinjam)'), [$tanggalMulai, $tanggalSelesai]);
+                return $query->whereDate('tanggal_pinjam', '>=', $tanggalMulai)
+                    ->whereDate('tanggal_pinjam', '<=', $tanggalSelesai);
             })
             ->latest();
     }
@@ -187,7 +183,6 @@ class PetugasController extends Controller
 
         if (! empty($filters['errors'])) {
             return redirect()->route('petugas.laporan.index', [
-                'search' => $filters['search'],
                 'status' => $filters['status'],
                 'tanggal_mulai' => $filters['tanggal_mulai'],
                 'tanggal_selesai' => $filters['tanggal_selesai'],
@@ -195,7 +190,6 @@ class PetugasController extends Controller
         }
 
         $peminjamans = $this->getLaporanPeminjamanQuery(
-            $filters['search'],
             $filters['status'],
             $filters['tanggal_mulai'],
             $filters['tanggal_selesai']
@@ -203,7 +197,6 @@ class PetugasController extends Controller
 
         return view('petugas.laporan.index', [
             'peminjamans' => $peminjamans,
-            'search' => $filters['search'],
             'status' => $filters['status'],
             'tanggal_mulai' => $filters['tanggal_mulai'],
             'tanggal_selesai' => $filters['tanggal_selesai'],
@@ -216,7 +209,6 @@ class PetugasController extends Controller
 
         if (! empty($filters['errors'])) {
             return redirect()->route('petugas.laporan.index', [
-                'search' => $filters['search'],
                 'status' => $filters['status'],
                 'tanggal_mulai' => $filters['tanggal_mulai'],
                 'tanggal_selesai' => $filters['tanggal_selesai'],
@@ -224,36 +216,19 @@ class PetugasController extends Controller
         }
 
         $peminjamans = $this->getLaporanPeminjamanQuery(
-            $filters['search'],
             $filters['status'],
             $filters['tanggal_mulai'],
             $filters['tanggal_selesai']
         )->get();
 
         $statusLabel = $filters['status'] === 'semua' ? 'Semua Status' : ucfirst($filters['status']);
-        $periodeText = 'Semua data';
-        if ($filters['search']) {
-            $periodeText = 'Pencarian: ' . $filters['search'];
-        }
-        if ($filters['status'] !== 'semua') {
-            $periodeText = 'Status: ' . $statusLabel;
-        }
+        $periodeText = $filters['status'] !== 'semua' ? 'Status: ' . $statusLabel : 'Semua data';
         if ($filters['tanggal_mulai'] || $filters['tanggal_selesai']) {
-            $periodeText = 'Periode: ' . ($filters['tanggal_mulai'] ?? '-') . ' s/d ' . ($filters['tanggal_selesai'] ?? '-');
-        }
-        if ($filters['status'] !== 'semua' && ($filters['tanggal_mulai'] || $filters['tanggal_selesai'])) {
-            $periodeText = 'Status: ' . $statusLabel . ' | Periode: ' . ($filters['tanggal_mulai'] ?? '-') . ' s/d ' . ($filters['tanggal_selesai'] ?? '-');
-        }
-        if ($filters['search'] && ($filters['tanggal_mulai'] || $filters['tanggal_selesai'])) {
-            $periodeText = 'Pencarian: ' . $filters['search'] . ' | Periode: ' . ($filters['tanggal_mulai'] ?? '-') . ' s/d ' . ($filters['tanggal_selesai'] ?? '-');
-        }
-        if ($filters['search'] && $filters['status'] !== 'semua' && ($filters['tanggal_mulai'] || $filters['tanggal_selesai'])) {
-            $periodeText = 'Pencarian: ' . $filters['search'] . ' | Status: ' . $statusLabel . ' | Periode: ' . ($filters['tanggal_mulai'] ?? '-') . ' s/d ' . ($filters['tanggal_selesai'] ?? '-');
+            $periodeText .= ($filters['status'] !== 'semua' ? ' | ' : '') . 'Periode: ' . ($filters['tanggal_mulai'] ?? '-') . ' s/d ' . ($filters['tanggal_selesai'] ?? '-');
         }
 
         $pdf = Pdf::loadView('petugas.laporan.pdf', [
             'peminjamans' => $peminjamans,
-            'search' => $filters['search'],
             'printedAt' => now()->translatedFormat('d F Y'),
             'printedAtDateTime' => now()->format('d-m-Y H:i:s'),
             'periode' => $periodeText,

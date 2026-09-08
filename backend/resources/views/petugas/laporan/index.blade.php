@@ -11,13 +11,7 @@
             </div>
 
             <div class="p-5">
-                <form action="{{ route('petugas.laporan.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Cari Nama Peminjam</label>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama peminjam..."
-                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-
+                <form action="{{ route('petugas.laporan.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-[1.15fr_1fr_1fr_auto_auto] gap-3 items-end">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Status Peminjaman</label>
                         <select name="status" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
@@ -30,25 +24,23 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal (Pinjam)</label>
                         <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"
                             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal (Pinjam)</label>
                         <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"
                             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
 
-                    <div class="md:col-span-5 flex justify-end gap-2">
-                        <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 text-sm font-semibold rounded-lg transition">
-                            Filter
-                        </button>
-                        <a href="{{ route('petugas.laporan.index') }}" class="inline-flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 text-sm font-semibold rounded-lg transition">
-                            Reset
-                        </a>
-                    </div>
+                    <button type="submit" class="w-full bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 text-sm font-semibold rounded-lg transition">
+                        Filter
+                    </button>
+                    <a href="{{ route('petugas.laporan.index') }}" class="inline-flex w-full items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 text-sm font-semibold rounded-lg transition">
+                        Reset
+                    </a>
                 </form>
             </div>
         </div>
@@ -62,7 +54,7 @@
         <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-4">
                 <h3 class="text-lg font-bold text-gray-800">Hasil Rekap Laporan</h3>
-                <a href="{{ route('petugas.laporan.pdf', ['search' => request('search'), 'status' => request('status', 'semua'), 'tanggal_mulai' => request('tanggal_mulai'), 'tanggal_selesai' => request('tanggal_selesai')]) }}" target="_blank"
+                <a href="{{ route('petugas.laporan.pdf', ['status' => request('status', 'semua'), 'tanggal_mulai' => request('tanggal_mulai'), 'tanggal_selesai' => request('tanggal_selesai')]) }}" target="_blank"
                     class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-semibold rounded-lg transition shadow-sm">
                     <span>🖨️</span>
                     <span>Cetak / Print Laporan</span>
