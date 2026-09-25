@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\PeminjamController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PeminjamProfilController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -72,7 +73,12 @@ Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam
     // Katalog & Pengajuan
     Route::get('/katalog', [PeminjamController::class, 'katalogAlat'])->name('katalog');
     Route::post('/peminjaman/ajukan', [PeminjamController::class, 'ajukanPeminjaman'])->name('peminjaman.ajukan');
+    Route::get('/peminjaman/{peminjaman}/edit', [PeminjamController::class, 'editPeminjaman'])->name('peminjaman.edit');
+    Route::put('/peminjaman/{peminjaman}', [PeminjamController::class, 'updatePeminjaman'])->name('peminjaman.update');
+    Route::delete('/peminjaman/{peminjaman}', [PeminjamController::class, 'destroyPeminjaman'])->name('peminjaman.destroy');
     Route::get('/riwayat', [PeminjamController::class, 'riwayatPeminjaman'])->name('riwayat');
+    Route::get('/profil', [PeminjamProfilController::class, 'edit'])->name('profil.edit');
+    Route::put('/profil', [PeminjamProfilController::class, 'update'])->name('profil.update');
 });
 
 // Route Tamu (Belum Login)

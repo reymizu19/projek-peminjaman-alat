@@ -43,6 +43,7 @@
                         <th class="py-3 px-4 border-b">Peminjam</th>
                         <th class="py-3 px-4 border-b">Tanggal Pinjam</th>
                         <th class="py-3 px-4 border-b">Rencana Kembali</th>
+                        <th class="py-3 px-4 border-b">Alasan Pengajuan</th>
                         <th class="py-3 px-4 border-b">Detail Alat</th>
                         <th class="py-3 px-4 border-b text-center">Aksi</th>
                     </tr>
@@ -58,6 +59,9 @@
                             </td>
                             <td class="py-3 px-4 border-b">
                                 {{ $item->tanggal_kembali_plan ? \Carbon\Carbon::parse($item->tanggal_kembali_plan)->format('d-m-Y H:i:s') : '-' }}
+                            </td>
+                            <td class="py-3 px-4 border-b max-w-xs">
+                                {{ $item->alasan ?: '-' }}
                             </td>
                             <td class="py-3 px-4 border-b">
                                 <ul class="list-disc list-inside space-y-1 text-xs">
@@ -95,7 +99,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-6 text-center text-gray-500">Tidak ada pengajuan peminjaman baru.</td>
+                            <td colspan="6" class="py-6 text-center text-gray-500">Tidak ada pengajuan peminjaman baru.</td>
                         </tr>
                     @endforelse
                 </tbody>

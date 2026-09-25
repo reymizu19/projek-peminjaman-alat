@@ -90,6 +90,12 @@ class PetugasController extends Controller
             'denda' => 'required|integer|min:0',
         ]);
 
+        if (substr_count((string) $request->input('denda'), '0') > 8) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['denda' => 'Biaya denda terlalu besar!']);
+        }
+
         DB::beginTransaction();
 
         try {

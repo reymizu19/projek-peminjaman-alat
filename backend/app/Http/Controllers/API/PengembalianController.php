@@ -65,7 +65,7 @@ class PengembalianController extends Controller
                     $alat->increment('stok', $detail->jumlah);
                 }
                 // Opsional: Catat ke log aktivitas petugas
-                auth()->user()->logAktivitas()->create([
+                auth()->user()->log_aktivitas()->create([
                     'aktivitas' => "Memproses pengembalian peminjaman ID: #{$peminjaman->id} dengan status akhir: {$statusPeminjamanBaru}."
                 ]);
                 // Load relasi agar response JSON lebih informatif
@@ -130,7 +130,7 @@ class PengembalianController extends Controller
                 // Kembalikan status peminjaman master menjadi dipinjam kembali
                 $peminjaman->update(['status' => 'dipinjam']);
                 // Log Aktivitas jika metode/relasi tersedia
-                auth()->user()->logAktivitas()?->create(['aktivitas' => "Membatalkan pengembalian ID: #{$pengembalian->id}"]); $pengembalian->delete();
+                auth()->user()->log_aktivitas()?->create(['aktivitas' => "Membatalkan pengembalian ID: #{$pengembalian->id}"]); $pengembalian->delete();
             });
         return response()->json([
             'message' => 'Data pengembalian berhasil dihapus. Stok dan status peminjaman telah dikembalikan ke kondisi semula.'

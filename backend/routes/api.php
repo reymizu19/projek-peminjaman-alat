@@ -21,7 +21,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role.admin')->group(function () {
         Route::apiResource('kategori', KategoriController::class);
         Route::apiResource('alat', AlatController::class);
-        Route::get('/katalog', [AlatController::class, 'katalog']);
         Route::apiResource('users', UserController::class);
         Route::get('/peminjaman', [PeminjamanController::class, 'index']); 
         Route::get('/peminjaman/{peminjaman}', [PeminjamanController::class, 'show']); 
@@ -44,6 +43,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/katalog', [AlatController::class, 'katalog']);
         Route::post('/peminjaman', [PeminjamanController::class, 'store']); 
         Route::get('/riwayat-pinjam', [PeminjamanController::class, 'riwayat']); 
-        Route::post('/pengembalian', [PengembalianController::class, 'store']);
     }); 
 });

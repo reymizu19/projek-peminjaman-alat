@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Peminjaman extends Model
 {
     protected $table = 'peminjaman';
-    protected $fillable = ['user_id', 'tanggal_pinjam', 'tgl_pinjam', 'tanggal_kembali_plan', 'tgl_kembali_plan', 'status'];
+    protected $fillable = ['user_id', 'tanggal_pinjam', 'tgl_pinjam', 'tanggal_kembali_plan', 'tgl_kembali_plan', 'alasan', 'status'];
 
     protected function casts(): array
     {

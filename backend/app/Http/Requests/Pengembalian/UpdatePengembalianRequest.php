@@ -15,7 +15,11 @@ class UpdatePengembalianRequest extends FormRequest
     { 
         return [ 
             'kondisi_kembali' => ['required', 'string', 'max:255'], 
-            'denda' => ['nullable', 'integer', 'min:0'], 
+            'denda' => ['nullable', 'integer', 'min:0', function ($attribute, $value, $fail) {
+                if (substr_count((string) $value, '0') > 8) {
+                    $fail('Biaya denda terlalu besar!');
+                }
+            }], 
         ]; 
     } 
 

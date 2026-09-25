@@ -76,6 +76,7 @@
                                     <div class="space-y-1">
                                         <label class="block text-xs font-semibold text-gray-700">Denda (Rp)</label>
                                         <input type="number" name="denda" value="0" min="0" class="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                        @error('denda') <span class="block text-xs text-red-500">{{ $message }}</span> @enderror
                                     </div>
                                     <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-sm font-semibold rounded-md transition">
                                         Terima Pengembalian

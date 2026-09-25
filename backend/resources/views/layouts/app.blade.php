@@ -72,6 +72,21 @@
                         Cetak Laporan
                     </a>
                 @endif
+
+                @if(auth()->user()->role === 'peminjam')
+                    <a href="{{ route('peminjam.katalog') }}"
+                       class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('peminjam.katalog') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Katalog Alat
+                    </a>
+                    <a href="{{ route('peminjam.riwayat') }}"
+                       class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('peminjam.riwayat') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Riwayat Peminjaman
+                    </a>
+                    <a href="{{ route('peminjam.profil.edit') }}"
+                       class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('peminjam.profil.*') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Profil Saya
+                    </a>
+                @endif
             </nav>
 
             <div class="p-4 border-t border-gray-800 text-sm text-gray-400">
