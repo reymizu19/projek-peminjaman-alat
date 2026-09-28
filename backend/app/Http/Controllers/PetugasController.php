@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alat;
+use App\Models\LogAktivitas;
 use App\Models\Peminjaman;
 use App\Models\Pengembalian;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -71,7 +72,7 @@ class PetugasController extends Controller
         $search = $request->input('search');
 
         $peminjamans = Peminjaman::with(['user', 'detailPinjams.alat'])
-            ->where('status', 'dipinjam')
+            ->whereIn('status', ['dipinjam', 'menunggu_pengembalian'])
             ->when($search, function ($query, $search) {
                 return $query->whereHas('user', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%");
@@ -81,6 +82,29 @@ class PetugasController extends Controller
             ->get();
 
         return view('petugas.pengembalian.index', compact('peminjamans', 'search'));
+    }
+
+    public function kirimPeringatanPengembalian($id)
+    {
+        $peminjaman = Peminjaman::with('user')->findOrFail($id);
+
+        if ($peminjaman->status !== 'dipinjam') {
+            return redirect()->back()->with('error', 'Peringatan hanya dapat dikirim untuk peminjaman yang masih aktif.');
+        }
+
+        $tanggalKembali = \Carbon\Carbon::parse($peminjaman->tanggal_kembali_plan ?? $peminjaman->tgl_kembali_plan)->startOfDay();
+        if (now()->startOfDay()->lt($tanggalKembali)) {
+            return redirect()->back()->with('error', 'Peringatan hanya dapat dikirim saat tanggal pengembalian telah tiba.');
+        }
+
+        $peminjaman->update(['pengingat_pengembalian_at' => now()]);
+
+        LogAktivitas::create([
+            'user_id' => auth()->id(),
+            'aktivitas' => "Mengirim peringatan pengembalian kepada {$peminjaman->user->name} untuk peminjaman ID: #{$peminjaman->id}.",
+        ]);
+
+        return redirect()->back()->with('success', 'Peringatan pengembalian ditampilkan kepada peminjam.');
     }
 
     public function terimaPengembalian(Request $request, $id)
@@ -101,8 +125,8 @@ class PetugasController extends Controller
         try {
             $peminjaman = Peminjaman::with('detailPinjams')->lockForUpdate()->findOrFail($id);
 
-            if ($peminjaman->status !== 'dipinjam') {
-                throw new Exception("Data ditolak. Peminjaman ini berstatus '{$peminjaman->status}', bukan 'dipinjam'.");
+            if ($peminjaman->status !== 'menunggu_pengembalian') {
+                throw new Exception("Pengembalian hanya dapat diterima setelah peminjam mengajukannya. Status saat ini: '{$peminjaman->status}'.");
             }
 
             $tglKembaliPlan = \Carbon\Carbon::parse($peminjaman->tanggal_kembali_plan ?? $peminjaman->tgl_kembali_plan)->startOfDay();

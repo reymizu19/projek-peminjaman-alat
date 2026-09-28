@@ -10,13 +10,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Peminjaman extends Model
 {
     protected $table = 'peminjaman';
-    protected $fillable = ['user_id', 'tanggal_pinjam', 'tgl_pinjam', 'tanggal_kembali_plan', 'tgl_kembali_plan', 'alasan', 'status'];
+    protected $fillable = ['user_id', 'tanggal_pinjam', 'tgl_pinjam', 'tanggal_kembali_plan', 'tgl_kembali_plan', 'alasan', 'status', 'pengembalian_diajukan_at', 'pengingat_pengembalian_at'];
 
     protected function casts(): array
     {
         return [
             'tanggal_pinjam' => 'datetime:Y-m-d H:i:s',
             'tanggal_kembali_plan' => 'datetime:Y-m-d H:i:s',
+            'pengembalian_diajukan_at' => 'datetime:Y-m-d H:i:s',
+            'pengingat_pengembalian_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

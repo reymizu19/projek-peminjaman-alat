@@ -16,6 +16,18 @@
             </form>
         </div>
 
+        @if(session('success'))
+            <div class="mx-5 mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="mx-5 mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {{ session('error') }}
+            </div>
+        @endif
+
         @if($errors->any())
             <div class="px-5 mt-4">
                 <div class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -38,6 +50,13 @@
                 </thead>
                 <tbody class="text-gray-700 text-sm">
                     @forelse($peminjamans as $item)
+                        @php
+                            $tanggalKembali = $item->tanggal_kembali_plan
+                                ? \Carbon\Carbon::parse($item->tanggal_kembali_plan)->startOfDay()
+                                : null;
+                            $sudahJatuhTempo = $tanggalKembali && now()->startOfDay()->greaterThanOrEqualTo($tanggalKembali);
+                            $sudahTerlambat = $tanggalKembali && now()->startOfDay()->greaterThan($tanggalKembali);
+                        @endphp
                         <tr class="align-top hover:bg-gray-50 transition">
                             <td class="py-3 px-4 border-b font-medium text-gray-900">
                                 {{ $item->user->name ?? 'User Dihapus' }}
@@ -49,8 +68,14 @@
                                 {{ $item->tanggal_kembali_plan ? \Carbon\Carbon::parse($item->tanggal_kembali_plan)->format('Y-m-d') : '-' }}
                             </td>
                             <td class="py-3 px-4 border-b">
-                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                    {{ ucfirst($item->status) }}
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full
+                                    @if($item->status === 'menunggu_pengembalian') bg-amber-100 text-amber-800
+                                    @elseif($item->status === 'telat' || ($item->status === 'dipinjam' && $sudahTerlambat)) bg-red-100 text-red-800
+                                    @else bg-blue-100 text-blue-800 @endif">
+                                    @if($item->status === 'menunggu_pengembalian') MengajukanPengembalian
+                                    @elseif($item->status === 'dipinjam' && $sudahTerlambat) Telat
+                                    @elseif($item->status === 'dipinjam' && $sudahJatuhTempo) Jatuh Tempo
+                                    @else {{ ucfirst(str_replace('_', ' ', $item->status)) }} @endif
                                 </span>
                             </td>
                             <td class="py-3 px-4 border-b align-top">
@@ -63,25 +88,41 @@
                                 </div>
                             </td>
                             <td class="py-3 px-4 border-b align-top">
-                                <form action="{{ route('petugas.pengembalian.terima', $item->id) }}" method="POST" class="space-y-3">
-                                    @csrf
-                                    <div class="space-y-1">
-                                        <label class="block text-xs font-semibold text-gray-700">Kondisi Kembali</label>
-                                        <select name="kondisi_kembali" class="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                                            <option value="Baik">Baik</option>
-                                            <option value="Rusak">Rusak</option>
-                                            <option value="Hilang">Hilang</option>
-                                        </select>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="block text-xs font-semibold text-gray-700">Denda (Rp)</label>
-                                        <input type="number" name="denda" value="0" min="0" class="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                                        @error('denda') <span class="block text-xs text-red-500">{{ $message }}</span> @enderror
-                                    </div>
-                                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-sm font-semibold rounded-md transition">
-                                        Terima Pengembalian
-                                    </button>
-                                </form>
+                                @if($item->status === 'menunggu_pengembalian')
+                                    <form action="{{ route('petugas.pengembalian.terima', $item->id) }}" method="POST" class="space-y-3">
+                                        @csrf
+                                        <div class="space-y-1">
+                                            <label class="block text-xs font-semibold text-gray-700">Kondisi Kembali</label>
+                                            <select name="kondisi_kembali" class="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                                <option value="Baik">Baik</option>
+                                                <option value="Rusak">Rusak</option>
+                                                <option value="Hilang">Hilang</option>
+                                            </select>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="block text-xs font-semibold text-gray-700">Denda (Rp)</label>
+                                            <input type="number" name="denda" value="0" min="0" class="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                            @error('denda') <span class="block text-xs text-red-500">{{ $message }}</span> @enderror
+                                        </div>
+                                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-sm font-semibold rounded-md transition">
+                                            Terima Pengembalian
+                                        </button>
+                                    </form>
+                                @elseif($item->status === 'dipinjam' && $sudahJatuhTempo)
+                                    <form action="{{ route('petugas.pengembalian.peringatan', $item->id) }}" method="POST" class="space-y-2">
+                                        @csrf
+                                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 text-sm font-semibold rounded-md transition">
+                                            {{ $item->pengingat_pengembalian_at ? 'Kirim Ulang Peringatan' : 'Kirim Peringatan' }}
+                                        </button>
+                                        @if($item->pengingat_pengembalian_at)
+                                            <p class="text-xs text-gray-500">Terakhir dikirim: {{ $item->pengingat_pengembalian_at->format('d-m-Y H:i') }}</p>
+                                        @endif
+                                    </form>
+                                @elseif($item->status === 'dipinjam')
+                                    <span class="text-xs text-gray-500">Aksi pengembalian tersedia setelah peminjam mengajukan pengembalian.</span>
+                                @else
+                                    <span class="text-xs text-gray-500">Pengembalian terlambat sudah diproses.</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

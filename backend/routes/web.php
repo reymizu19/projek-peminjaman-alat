@@ -64,6 +64,7 @@ Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petu
     // Pengembalian & Laporan
     Route::get('/pengembalian', [PetugasController::class, 'indexPengembalian'])->name('pengembalian.index');
     Route::post('/pengembalian/{id}/terima', [PetugasController::class, 'terimaPengembalian'])->name('pengembalian.terima');
+    Route::post('/pengembalian/{id}/peringatan', [PetugasController::class, 'kirimPeringatanPengembalian'])->name('pengembalian.peringatan');
     Route::get('/laporan', [PetugasController::class, 'indexLaporan'])->name('laporan.index');
     Route::get('/laporan/pdf', [PetugasController::class, 'pdfLaporan'])->name('laporan.pdf');
 });
@@ -73,6 +74,8 @@ Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam
     // Katalog & Pengajuan
     Route::get('/katalog', [PeminjamController::class, 'katalogAlat'])->name('katalog');
     Route::post('/peminjaman/ajukan', [PeminjamController::class, 'ajukanPeminjaman'])->name('peminjaman.ajukan');
+    Route::get('/peminjaman-saya', [PeminjamController::class, 'peminjamanSaya'])->name('peminjaman.saya');
+    Route::post('/peminjaman/{peminjaman}/kembalikan', [PeminjamController::class, 'ajukanPengembalian'])->name('peminjaman.kembalikan');
     Route::get('/peminjaman/{peminjaman}/edit', [PeminjamController::class, 'editPeminjaman'])->name('peminjaman.edit');
     Route::put('/peminjaman/{peminjaman}', [PeminjamController::class, 'updatePeminjaman'])->name('peminjaman.update');
     Route::delete('/peminjaman/{peminjaman}', [PeminjamController::class, 'destroyPeminjaman'])->name('peminjaman.destroy');

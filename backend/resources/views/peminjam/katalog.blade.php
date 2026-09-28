@@ -31,7 +31,7 @@
                     <input id="tgl_kembali_plan" type="date" name="tgl_kembali_plan" min="{{ now()->addDay()->format('Y-m-d') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label for="alasan" class="block text-gray-700 text-sm font-semibold mb-2">Alasan Peminjaman</label>
+                    <label for="alasan" class="block text-gray-700 text-sm font-semibold mb-2">ALASAN PENGAJUAN</label>
                     <input id="alasan" type="text" name="alasan" maxlength="500" required placeholder="Contoh: Praktik kelas" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>

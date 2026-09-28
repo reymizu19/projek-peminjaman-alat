@@ -474,7 +474,7 @@ class AdminController extends Controller
         $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($id);
 
         $request->validate([
-            'status' => 'required|in:diajukan,dipinjam,dikembalikan,telat',
+            'status' => 'required|in:diajukan,dipinjam,menunggu_pengembalian,dikembalikan,telat',
         ]);
 
         DB::beginTransaction();
@@ -496,7 +496,7 @@ class AdminController extends Controller
                 }
             }
 
-            elseif (($statusLama === 'dipinjam' && $statusBaru === 'dikembalikan') || ($statusLama === 'dipinjam' && $statusBaru === 'telat')) {
+            elseif (in_array($statusLama, ['dipinjam', 'menunggu_pengembalian'], true) && in_array($statusBaru, ['dikembalikan', 'telat'], true)) {
                 foreach ($peminjaman->detailPinjam as $detail) {
                     $alat = Alat::findOrFail($detail->alat_id);
                     $alat->stok += $detail->jumlah;

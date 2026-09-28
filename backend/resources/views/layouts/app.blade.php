@@ -78,6 +78,10 @@
                        class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('peminjam.katalog') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Katalog Alat
                     </a>
+                    <a href="{{ route('peminjam.peminjaman.saya') }}"
+                       class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('peminjam.peminjaman.saya') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Peminjaman Saya
+                    </a>
                     <a href="{{ route('peminjam.riwayat') }}"
                        class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('peminjam.riwayat') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Riwayat Peminjaman

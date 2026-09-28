@@ -94,7 +94,7 @@
                                         @elseif($item->status == 'dikembalikan') bg-emerald-100 text-emerald-800
                                         @elseif($item->status == 'telat') bg-red-100 text-red-800
                                         @else bg-gray-100 text-gray-800 @endif">
-                                        {{ ucfirst($item->status) }}
+                                        {{ $item->status === 'menunggu_pengembalian' ? 'MengajukanPengembalian' : ucfirst($item->status) }}
                                     </span>
                                 </td>
                                 <td class="py-3 px-4 border-b">

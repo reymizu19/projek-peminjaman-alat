@@ -43,7 +43,7 @@
                         <th class="py-3 px-4 border-b">Peminjam</th>
                         <th class="py-3 px-4 border-b">Tanggal Pinjam</th>
                         <th class="py-3 px-4 border-b">Rencana Kembali</th>
-                        <th class="py-3 px-4 border-b">Alasan Pengajuan</th>
+                        <th class="py-3 px-4 border-b">ALASAN PENGAJUAN</th>
                         <th class="py-3 px-4 border-b">Detail Alat</th>
                         <th class="py-3 px-4 border-b text-center">Aksi</th>
                     </tr>
@@ -92,7 +92,7 @@
                                     </div>
                                 @else
                                     <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">
-                                        {{ ucfirst($item->status) }}
+                                        {{ $item->status === 'menunggu_pengembalian' ? 'MengajukanPengembalian' : ucfirst($item->status) }}
                                     </span>
                                 @endif
                             </td>

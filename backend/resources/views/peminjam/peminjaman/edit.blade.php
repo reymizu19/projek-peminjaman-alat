@@ -21,11 +21,11 @@
             <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-gray-200">
                 <div>
                     <label for="tgl_kembali_plan" class="block text-gray-700 text-sm font-semibold mb-2">Rencana Tanggal Kembali</label>
-                    <input id="tgl_kembali_plan" type="date" name="tgl_kembali_plan" value="{{ old('tgl_kembali_plan', optional($peminjaman->tanggal_kembali_plan)->format('Y-m-d')) }}" min="{{ now()->addDay()->format('Y-m-d') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input id="tgl_kembali_plan" type="date" name="tgl_kembali_plan" value="{{ old('tgl_kembali_plan', optional($peminjaman->tanggal_kembali_plan)->format('Y-m-d')) }}" min="{{ now()->addDay()->format('Y-m-d') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label for="alasan" class="block text-gray-700 text-sm font-semibold mb-2">Alasan Peminjaman</label>
-                    <input id="alasan" type="text" name="alasan" value="{{ old('alasan', $peminjaman->alasan) }}" maxlength="500" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="alasan" class="block text-gray-700 text-sm font-semibold mb-2">ALASAN PENGAJUAN</label>
+                    <input id="alasan" type="text" name="alasan" value="{{ old('alasan', $peminjaman->alasan) }}" maxlength="500" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
 
@@ -66,7 +66,7 @@
             </div>
 
             <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-2">
-                <a href="{{ route('peminjam.riwayat') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg text-sm font-semibold transition">Batal</a>
+                <a href="{{ route('peminjam.peminjaman.saya') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg text-sm font-semibold transition">Batal</a>
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Simpan Perubahan</button>
             </div>
         </form>

@@ -156,7 +156,7 @@
                     <td>{{ $item->user->name ?? 'User Dihapus' }}</td>
                     <td>
                         <span class="status-badge @if($item->status == 'diajukan') status-diajukan @elseif($item->status == 'dipinjam') status-dipinjam @elseif($item->status == 'dikembalikan') status-dikembalikan @elseif($item->status == 'telat') status-telat @endif">
-                            {{ ucfirst($item->status) }}
+                            {{ $item->status === 'menunggu_pengembalian' ? 'MengajukanPengembalian' : ucfirst($item->status) }}
                         </span>
                     </td>
                     <td>{{ $item->tanggal_pinjam ? \Carbon\Carbon::parse($item->tanggal_pinjam)->format('d-m-Y H:i:s') : '-' }}</td>

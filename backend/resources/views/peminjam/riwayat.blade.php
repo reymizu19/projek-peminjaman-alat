@@ -5,7 +5,7 @@
 
 @section('content')
     <div class="space-y-5">
-        <p class="text-sm text-slate-500">Daftar pengajuan dan status peminjaman Anda.</p>
+        <p class="text-sm text-slate-500">Riwayat peminjaman alat Anda.</p>
 
         @forelse($peminjamans as $peminjaman)
             @php
@@ -22,7 +22,7 @@
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Peminjaman #{{ $peminjaman->id }}</p>
                         <h2 class="mt-1 font-semibold text-slate-900">{{ optional($peminjaman->tanggal_pinjam)->format('d M Y') }}</h2>
                     </div>
-                    <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $statusStyles[$peminjaman->status] ?? 'bg-slate-100 text-slate-600' }}">{{ ucfirst($peminjaman->status) }}</span>
+                    <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $statusStyles[$peminjaman->status] ?? 'bg-slate-100 text-slate-600' }}">{{ $peminjaman->status === 'menunggu_pengembalian' ? 'MengajukanPengembalian' : ucfirst($peminjaman->status) }}</span>
                 </div>
                 <div class="grid gap-4 py-4 text-sm md:grid-cols-3">
                     @php
@@ -41,7 +41,7 @@
                             <p class="mt-1 text-xs text-slate-400">Menunggu persetujuan</p>
                         @endif
                     </div>
-                    <div><p class="text-xs text-slate-500">Alasan peminjaman</p><p class="mt-1 font-medium text-slate-800">{{ $peminjaman->alasan ?: '-' }}</p></div>
+                    <div><p class="text-xs text-slate-500">ALASAN PENGAJUAN</p><p class="mt-1 font-medium text-slate-800">{{ $peminjaman->alasan ?: '-' }}</p></div>
                     <div><p class="text-xs text-slate-500">Alat</p><div class="mt-1 space-y-1 font-medium text-slate-800">@foreach($peminjaman->detailPinjams as $detail)<p>{{ $detail->alat->nama_alat ?? 'Alat dihapus' }} <span class="text-slate-400">x{{ $detail->jumlah }}</span></p>@endforeach</div></div>
                 </div>
                 @if($peminjaman->status === 'diajukan')
