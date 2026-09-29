@@ -7,56 +7,53 @@
     <div class="space-y-5">
         <p class="text-sm text-slate-500">Riwayat peminjaman alat Anda.</p>
 
-        @forelse($peminjamans as $peminjaman)
-            @php
-                $statusStyles = [
-                    'diajukan' => 'bg-amber-50 text-amber-700',
-                    'dipinjam' => 'bg-blue-50 text-blue-700',
-                    'dikembalikan' => 'bg-emerald-50 text-emerald-700',
-                    'telat' => 'bg-red-50 text-red-700',
-                ];
-            @endphp
-            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Peminjaman #{{ $peminjaman->id }}</p>
-                        <h2 class="mt-1 font-semibold text-slate-900">{{ optional($peminjaman->tanggal_pinjam)->format('d M Y') }}</h2>
-                    </div>
-                    <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $statusStyles[$peminjaman->status] ?? 'bg-slate-100 text-slate-600' }}">{{ $peminjaman->status === 'menunggu_pengembalian' ? 'MengajukanPengembalian' : ucfirst($peminjaman->status) }}</span>
-                </div>
-                <div class="grid gap-4 py-4 text-sm md:grid-cols-3">
-                    @php
-                        $rencanaKembali = $peminjaman->tanggal_kembali_plan ?? $peminjaman->tgl_kembali_plan;
-                        $rencanaKembali = $rencanaKembali ? \Carbon\Carbon::parse($rencanaKembali) : null;
-                        $hariTersisa = $rencanaKembali ? now()->startOfDay()->diffInDays($rencanaKembali->copy()->startOfDay(), false) : null;
-                    @endphp
-                    <div>
-                        <p class="text-xs text-slate-500">Rencana kembali</p>
-                        <p class="mt-1 font-medium text-slate-800">{{ $rencanaKembali ? $rencanaKembali->format('d M Y') : '-' }}</p>
-                        @if($peminjaman->status === 'dipinjam' && $hariTersisa !== null)
-                            <p class="mt-1 text-xs font-semibold {{ $hariTersisa < 0 ? 'text-red-600' : 'text-blue-600' }}">
-                                {{ $hariTersisa < 0 ? 'Terlambat ' . abs($hariTersisa) . ' hari' : ($hariTersisa === 0 ? 'Batas pengembalian hari ini' : 'Tersisa ' . $hariTersisa . ' hari') }}
-                            </p>
-                        @elseif($peminjaman->status === 'diajukan')
-                            <p class="mt-1 text-xs text-slate-400">Menunggu persetujuan</p>
-                        @endif
-                    </div>
-                    <div><p class="text-xs text-slate-500">ALASAN PENGAJUAN</p><p class="mt-1 font-medium text-slate-800">{{ $peminjaman->alasan ?: '-' }}</p></div>
-                    <div><p class="text-xs text-slate-500">Alat</p><div class="mt-1 space-y-1 font-medium text-slate-800">@foreach($peminjaman->detailPinjams as $detail)<p>{{ $detail->alat->nama_alat ?? 'Alat dihapus' }} <span class="text-slate-400">x{{ $detail->jumlah }}</span></p>@endforeach</div></div>
-                </div>
-                @if($peminjaman->status === 'diajukan')
-                    <div class="flex gap-2 border-t border-gray-100 pt-4">
-                        <a href="{{ route('peminjam.peminjaman.edit', $peminjaman) }}" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">Edit Pengajuan</a>
-                        <form action="{{ route('peminjam.peminjaman.destroy', $peminjaman) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus pengajuan ini?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">Hapus Pengajuan</button>
-                        </form>
-                    </div>
-                @endif
-            </article>
-        @empty
-            <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-slate-500">Belum ada riwayat peminjaman.</div>
-        @endforelse
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[1100px] text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wider">
+                            <th class="py-3 px-4 border-b">No</th>
+                            <th class="py-3 px-4 border-b">Tanggal Pinjam</th>
+                            <th class="py-3 px-4 border-b">Rencana Kembali</th>
+                            <th class="py-3 px-4 border-b">Tanggal Dikembalikan</th>
+                            <th class="py-3 px-4 border-b">Detail Alat</th>
+                            <th class="py-3 px-4 border-b">Kondisi Kembali</th>
+                            <th class="py-3 px-4 border-b">Denda</th>
+                            <th class="py-3 px-4 border-b">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-700 text-sm">
+                        @forelse($peminjamans as $index => $peminjaman)
+                            <tr class="hover:bg-gray-50 transition align-top">
+                                <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $index + 1 }}</td>
+                                <td class="py-3 px-4 border-b">{{ $peminjaman->tanggal_pinjam ? \Carbon\Carbon::parse($peminjaman->tanggal_pinjam)->format('d-m-Y') : '-' }}</td>
+                                <td class="py-3 px-4 border-b">{{ $peminjaman->tanggal_kembali_plan ? \Carbon\Carbon::parse($peminjaman->tanggal_kembali_plan)->format('d-m-Y') : '-' }}</td>
+                                <td class="py-3 px-4 border-b">{{ $peminjaman->pengembalian?->tanggal_kembali ? \Carbon\Carbon::parse($peminjaman->pengembalian->tanggal_kembali)->format('d-m-Y H:i') : '-' }}</td>
+                                <td class="py-3 px-4 border-b">
+                                    <div class="space-y-1">
+                                        @forelse($peminjaman->detailPinjams as $detail)
+                                            <div>{{ $detail->alat->nama_alat ?? 'Alat dihapus' }} ({{ $detail->jumlah }})</div>
+                                        @empty
+                                            <span>-</span>
+                                        @endforelse
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 border-b">{{ $peminjaman->pengembalian?->kondisi_kembali ?? '-' }}</td>
+                                <td class="py-3 px-4 border-b font-medium">Rp {{ number_format($peminjaman->pengembalian?->denda ?? 0, 0, ',', '.') }}</td>
+                                <td class="py-3 px-4 border-b">
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full {{ $peminjaman->status === 'telat' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' }}">
+                                        {{ ucfirst($peminjaman->status) }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="py-6 text-center text-gray-500">Belum ada riwayat peminjaman.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 @endsection

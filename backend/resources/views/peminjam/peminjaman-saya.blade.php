@@ -32,6 +32,9 @@
                                 $sudahTerlambat = $peminjaman->status === 'dipinjam'
                                     && $tanggalKembaliPlan
                                     && now()->startOfDay()->greaterThan($tanggalKembaliPlan);
+                                $hariTersisa = $peminjaman->status === 'dipinjam' && $tanggalKembaliPlan
+                                    ? now()->startOfDay()->diffInDays($tanggalKembaliPlan, false)
+                                    : null;
                             @endphp
                             <td class="py-3 px-4 border-b font-medium text-gray-900">
                                 #{{ $peminjaman->id }}
@@ -53,6 +56,11 @@
                             </td>
                             <td class="py-3 px-4 border-b">
                                 {{ $peminjaman->tanggal_kembali_plan ? \Carbon\Carbon::parse($peminjaman->tanggal_kembali_plan)->format('d-m-Y') : '-' }}
+                                @if($hariTersisa !== null)
+                                    <span class="mt-1 block text-xs font-semibold {{ $hariTersisa < 0 ? 'text-red-600' : ($hariTersisa === 0 ? 'text-amber-600' : 'text-blue-600') }}">
+                                        {{ $hariTersisa < 0 ? 'Terlambat ' . abs($hariTersisa) . ' hari' : ($hariTersisa === 0 ? 'Jatuh tempo hari ini' : 'Tersisa ' . $hariTersisa . ' hari') }}
+                                    </span>
+                                @endif
                             </td>
                             <td class="py-3 px-4 border-b max-w-xs">
                                 {{ $peminjaman->alasan ?: '-' }}

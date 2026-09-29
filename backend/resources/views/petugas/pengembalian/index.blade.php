@@ -93,11 +93,12 @@
                                         @csrf
                                         <div class="space-y-1">
                                             <label class="block text-xs font-semibold text-gray-700">Kondisi Kembali</label>
-                                            <select name="kondisi_kembali" class="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                                                <option value="Baik">Baik</option>
-                                                <option value="Rusak">Rusak</option>
-                                                <option value="Hilang">Hilang</option>
-                                            </select>
+                                            <input type="text" name="kondisi_kembali" list="kondisi-kembali-options" value="{{ old('kondisi_kembali', 'Baik') }}" required maxlength="255" placeholder="Pilih atau ketik kondisi alat" class="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                            <datalist id="kondisi-kembali-options">
+                                                <option value="Baik"></option>
+                                                <option value="Rusak"></option>
+                                                <option value="Hilang"></option>
+                                            </datalist>
                                         </div>
                                         <div class="space-y-1">
                                             <label class="block text-xs font-semibold text-gray-700">Denda (Rp)</label>
