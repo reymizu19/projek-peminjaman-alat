@@ -57,7 +57,10 @@ class PengembalianController extends Controller
                     'petugas_id' => auth()->id(), // Ambil ID user (petugas) yang sedang login
                 ]);
                 // 2. Ubah status di tabel peminjaman utama
-                $peminjaman->update(['status' => $statusPeminjamanBaru]);
+                $peminjaman->update([
+                    'status' => $statusPeminjamanBaru,
+                    'stok_dicadangkan' => false,
+                ]);
                 // 3. Kembalikan (tambah) stok alat berdasarkan detail_pinjam
                 foreach ($peminjaman->detailPinjam as $detail) {
                     $alat = Alat::lockForUpdate()->find($detail->alat_id);
@@ -66,7 +69,7 @@ class PengembalianController extends Controller
                 }
                 // Opsional: Catat ke log aktivitas petugas
                 auth()->user()->log_aktivitas()->create([
-                    'aktivitas' => "Memproses pengembalian peminjaman ID: #{$peminjaman->id} dengan status akhir: {$statusPeminjamanBaru}."
+                    'aktivitas' => "Petugas " . auth()->user()->name . " menerima pengembalian peminjaman #{$peminjaman->id} milik {$peminjaman->user->name}; kondisi: {$request->kondisi_kembali}; denda: Rp " . ($request->denda ?? 0) . "; status akhir: {$statusPeminjamanBaru} melalui API."
                 ]);
                 // Load relasi agar response JSON lebih informatif
                 return $pengembalian->load(['peminjaman.user', 'petugas']);
@@ -128,7 +131,10 @@ class PengembalianController extends Controller
                     $alat->decrement('stok', $detail->jumlah);
                 }
                 // Kembalikan status peminjaman master menjadi dipinjam kembali
-                $peminjaman->update(['status' => 'dipinjam']);
+                $peminjaman->update([
+                    'status' => 'dipinjam',
+                    'stok_dicadangkan' => true,
+                ]);
                 // Log Aktivitas jika metode/relasi tersedia
                 auth()->user()->log_aktivitas()?->create(['aktivitas' => "Membatalkan pengembalian ID: #{$pengembalian->id}"]); $pengembalian->delete();
             });

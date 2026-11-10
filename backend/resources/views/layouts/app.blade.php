@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>@yield('title', 'Dashboard Admin')</title>
+    <title>@yield('title', 'Panel ' . ucfirst(auth()->user()->role ?? 'Pengguna') . ' - Sistem Peminjaman')</title>
 
     <!-- Memuat Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,7 +25,7 @@
         <aside class="w-64 bg-gray-900 text-white flex flex-col hidden md:flex">
 
             <div class="p-5 text-xl font-bold tracking-wider border-b border-gray-800">
-                PANEL ADMIN
+                PANEL {{ strtoupper(auth()->user()->role ?? 'pengguna') }}
             </div>
 
             <nav class="flex-1 p-4 space-y-2">
@@ -54,6 +54,10 @@
                     <a href="{{ route('admin.pengembalian.index') }}"
                        class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.pengembalian.*') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Kelola Pengembalian
+                    </a>
+                    <a href="{{ route('admin.log-aktivitas.index') }}"
+                       class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.log-aktivitas.*') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Log Aktivitas
                     </a>
                 @endif
 
@@ -94,10 +98,17 @@
             </nav>
 
             <div class="p-4 border-t border-gray-800 text-sm text-gray-400">
-                Logged in as:
-                <span class="text-white font-semibold">
-                    {{ auth()->user()->name }}
-                </span>
+                <div class="flex items-center gap-3">
+                    <img
+                        src="{{ auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/profile-placeholder.svg') }}"
+                        alt="Foto profil {{ auth()->user()->name }}"
+                        onerror="this.onerror=null;this.src='{{ asset('images/profile-placeholder.svg') }}'"
+                        class="h-10 w-10 rounded-full border border-gray-700 object-cover">
+                    <div class="min-w-0">
+                        <span class="block">Logged in as:</span>
+                        <span class="block truncate text-white font-semibold">{{ auth()->user()->name }}</span>
+                    </div>
+                </div>
             </div>
 
         </aside>

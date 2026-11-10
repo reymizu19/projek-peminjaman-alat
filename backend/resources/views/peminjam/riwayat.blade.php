@@ -32,7 +32,14 @@
                                 <td class="py-3 px-4 border-b">
                                     <div class="space-y-1">
                                         @forelse($peminjaman->detailPinjams as $detail)
-                                            <div>{{ $detail->alat->nama_alat ?? 'Alat dihapus' }} ({{ $detail->jumlah }})</div>
+                                            <div class="flex items-center gap-2">
+                                                <img
+                                                    src="{{ $detail->alat?->gambar ? asset('storage/' . $detail->alat->gambar) : asset('images/alat-placeholder.svg') }}"
+                                                    alt="Foto {{ $detail->alat->nama_alat ?? 'alat' }}"
+                                                    onerror="this.onerror=null;this.src='{{ asset('images/alat-placeholder.svg') }}'"
+                                                    class="h-10 w-10 rounded object-cover border border-gray-200">
+                                                <span>{{ $detail->alat->nama_alat ?? 'Alat dihapus' }} ({{ $detail->jumlah }})</span>
+                                            </div>
                                         @empty
                                             <span>-</span>
                                         @endforelse

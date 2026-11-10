@@ -8,6 +8,7 @@ use App\Http\Resources\PeminjamanResource;
 use App\Models\Alat;
 use App\Models\Peminjaman;
 use App\Models\DetailPinjam;
+use App\Models\LogAktivitas;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -46,6 +47,7 @@ class PeminjamanController extends Controller
                 'tanggal_pinjam' => now(),
                 'tanggal_kembali_plan' => $tanggalKembaliPlan,
                 'status' => 'diajukan',
+                'stok_dicadangkan' => true,
             ]);
 
             foreach ($request->items as $item) {
@@ -54,12 +56,20 @@ class PeminjamanController extends Controller
                 if ($alat->stok < $item['jumlah']) {
                     throw new Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi. Sisa stok: {$alat->stok}");
                 }
+                $alat->decrement('stok', $item['jumlah']);
+
                 DetailPinjam::create([
                     'peminjaman_id' => $peminjaman->id,
                     'alat_id' => $item['alat_id'],
                     'jumlah' => $item['jumlah'],
                 ]);
             }
+
+            LogAktivitas::create([
+                'user_id' => $user->id,
+                'aktivitas' => "Peminjam {$user->name} mengajukan peminjaman #{$peminjaman->id} melalui API.",
+            ]);
+
             return $peminjaman->load(['user', 'detailPinjam.alat']);
         });
         return response()->json([
@@ -97,14 +107,43 @@ class PeminjamanController extends Controller
         try {
             DB::transaction(function () use ($request, $peminjaman) {
                 $peminjaman->update(['tgl_kembali_plan' => $request->tgl_kembali_plan,]);
-                $peminjaman->detailPinjam()->delete();
-                foreach ($request->items as $item) {
-                    // Ditambahkan lockForUpdate agar konsisten aman dari race condition saat update data draft
-                    $alat = Alat::lockForUpdate()->findOrFail($item['alat_id']);
 
-                    if ($alat->stok < $item['jumlah']) {
-                        throw new Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi.");
+                $reserved = ($peminjaman->stok_dicadangkan ? $peminjaman->detailPinjam()->get() : collect())
+                    ->groupBy('alat_id')
+                    ->map(fn ($items) => $items->sum('jumlah'));
+                $requested = [];
+
+                foreach ($request->items as $item) {
+                    $alatId = (int) $item['alat_id'];
+                    $requested[$alatId] = ($requested[$alatId] ?? 0) + (int) $item['jumlah'];
+                }
+
+                $alatIds = $reserved->keys()->merge(array_keys($requested))->unique()->sort();
+                $alats = Alat::whereIn('id', $alatIds)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+
+                foreach ($requested as $alatId => $jumlah) {
+                    $alat = $alats->get($alatId);
+
+                    if (! $alat || $alat->stok + ($reserved[$alatId] ?? 0) < $jumlah) {
+                        throw new Exception("Stok alat tidak mencukupi untuk diperbarui.");
                     }
+                }
+
+                foreach ($alatIds as $alatId) {
+                    $selisih = ($requested[$alatId] ?? 0) - ($reserved[$alatId] ?? 0);
+                    $alat = $alats->get($alatId);
+
+                    if ($selisih > 0) {
+                        $alat->decrement('stok', $selisih);
+                    } elseif ($selisih < 0) {
+                        $alat->increment('stok', abs($selisih));
+                    }
+                }
+
+                $peminjaman->detailPinjam()->delete();
+                $peminjaman->update(['stok_dicadangkan' => true]);
+
+                foreach ($request->items as $item) {
                     DetailPinjam::create([
                         'peminjaman_id' => $peminjaman->id,
                         'alat_id' => $item['alat_id'],
@@ -135,6 +174,12 @@ class PeminjamanController extends Controller
         }
 
         DB::transaction(function () use ($peminjaman) {
+            if ($peminjaman->stok_dicadangkan) {
+                foreach ($peminjaman->detailPinjam as $detail) {
+                    Alat::lockForUpdate()->findOrFail($detail->alat_id)->increment('stok', $detail->jumlah);
+                }
+            }
+
             $peminjaman->detailPinjam()->delete(); // Hapus child record terlebih dahulu
             $peminjaman->delete();
         });
@@ -146,24 +191,40 @@ class PeminjamanController extends Controller
 
     public function approve(Peminjaman $peminjaman): JsonResponse
     {
-        if ($peminjaman->status !== 'diajukan') {
-            return response()->json(['message' => "Persutujuan gagal. Status saat ini:{$peminjaman->status}."], 400);
-        }
         try {
-            DB::transaction(function () use ($peminjaman) {
-            $peminjaman->update(['status' => 'dipinjam']);
-            foreach ($peminjaman->detailPinjam as $detail) {
-                // Mengunci baris alat demi validasi final sebelum stok dikurangi
-                $alat = Alat::lockForUpdate()->findOrFail($detail->alat_id);
+            $peminjaman = DB::transaction(function () use ($peminjaman) {
+                $peminjaman = Peminjaman::lockForUpdate()->findOrFail($peminjaman->id);
 
-                if ($alat->stok < $detail->jumlah) {
-                    throw new Exception("Persetujuan gagal. Stok alat '{$alat->nama_alat}' mendadak tidak mencukupi.");
+                if ($peminjaman->status !== 'diajukan') {
+                    throw new Exception("Persetujuan gagal. Status saat ini: {$peminjaman->status}.");
                 }
-                $alat->decrement('stok', $detail->jumlah);
-            }
+
+                if (! $peminjaman->stok_dicadangkan) {
+                    foreach ($peminjaman->detailPinjam as $detail) {
+                        $alat = Alat::lockForUpdate()->findOrFail($detail->alat_id);
+
+                        if ($alat->stok < $detail->jumlah) {
+                            throw new Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi.");
+                        }
+
+                        $alat->decrement('stok', $detail->jumlah);
+                    }
+                }
+
+                $peminjaman->update([
+                    'status' => 'dipinjam',
+                    'stok_dicadangkan' => true,
+                ]);
+
+                LogAktivitas::create([
+                    'user_id' => auth()->id(),
+                    'aktivitas' => "Petugas " . auth()->user()->name . " menyetujui peminjaman #{$peminjaman->id} milik {$peminjaman->user->name} melalui API.",
+                ]);
+
+                return $peminjaman;
             });
             return response()->json([
-                'message' => 'Peminjaman disetujui. Stok alat telah otomatis dikurangi.',
+                'message' => 'Peminjaman disetujui.',
                 'data' => new PeminjamanResource($peminjaman->load(['user', 'detailPinjam.alat']))
             ]);
         } catch (Exception $e) {

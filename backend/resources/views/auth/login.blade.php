@@ -76,6 +76,10 @@
             </button>
         </form>
 
+        <p class="mt-4 text-center text-sm">
+            Belum punya akun? <a href="{{ route('register') }}" class="text-blue-600">Register</a>
+        </p>
+
     </div>
 
 </body>

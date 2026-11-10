@@ -9,7 +9,7 @@ use App\Http\Controllers\API\PengembalianController;
 use App\Http\Controllers\API\LogAktivitasController;
 use App\Http\Controllers\API\LaporanController;
  
-// Public Routes (Tidak perlu token ya dek ya)
+// Public Routes (Tidak perlu token) 
 Route::post('/register', [AuthController::class, 'register']); 
 Route::post('/login', [AuthController::class, 'login']); 
  

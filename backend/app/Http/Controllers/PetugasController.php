@@ -35,17 +35,36 @@ class PetugasController extends Controller
     {
         DB::beginTransaction();
         try {
-            $peminjaman = Peminjaman::with('detailPinjams')->findOrFail($id);
-            $peminjaman->update(['status' => 'dipinjam']);
+            $peminjaman = Peminjaman::with(['detailPinjams', 'user'])->lockForUpdate()->findOrFail($id);
 
-            foreach ($peminjaman->detailPinjams as $detail) {
-                $alat = Alat::findOrFail($detail->alat_id);
-                $alat->stok -= $detail->jumlah;
-                $alat->save();
+            if ($peminjaman->status !== 'diajukan') {
+                throw new Exception('Pengajuan peminjaman sudah diproses.');
             }
 
+            if (! $peminjaman->stok_dicadangkan) {
+                foreach ($peminjaman->detailPinjams as $detail) {
+                    $alat = Alat::lockForUpdate()->findOrFail($detail->alat_id);
+
+                    if ($alat->stok < $detail->jumlah) {
+                        throw new Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi.");
+                    }
+
+                    $alat->decrement('stok', $detail->jumlah);
+                }
+            }
+
+            $peminjaman->update([
+                'status' => 'dipinjam',
+                'stok_dicadangkan' => true,
+            ]);
+
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => "Petugas " . auth()->user()->name . " menyetujui peminjaman #{$peminjaman->id} milik {$peminjaman->user->name}.",
+            ]);
+
             DB::commit();
-            return redirect()->back()->with('success', 'Peminjaman disetujui dan stok alat dikurangi.');
+            return redirect()->back()->with('success', 'Peminjaman disetujui.');
         } catch (Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -55,14 +74,32 @@ class PetugasController extends Controller
     // Menolak Peminjaman (Menghapus pengajuan agar siswa bisa mengajukan ulang)
     public function tolakPeminjaman($id)
     {
+        DB::beginTransaction();
+
         try {
-            $peminjaman = Peminjaman::findOrFail($id);
-            if ($peminjaman->status == 'diajukan') {
-                $peminjaman->delete();
-                return redirect()->back()->with('success', 'Pengajuan peminjaman berhasil ditolak.');
+            $peminjaman = Peminjaman::with(['detailPinjams', 'user'])->lockForUpdate()->findOrFail($id);
+
+            if ($peminjaman->status !== 'diajukan') {
+                throw new Exception('Status peminjaman sudah berubah.');
             }
-            return redirect()->back()->with('error', 'Status peminjaman sudah berubah.');
+
+            foreach ($peminjaman->detailPinjams as $detail) {
+                if ($peminjaman->stok_dicadangkan) {
+                    Alat::lockForUpdate()->findOrFail($detail->alat_id)->increment('stok', $detail->jumlah);
+                }
+            }
+
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => "Petugas " . auth()->user()->name . " menolak pengajuan peminjaman #{$peminjaman->id} milik {$peminjaman->user->name}.",
+            ]);
+
+            $peminjaman->delete();
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Pengajuan peminjaman berhasil ditolak.');
         } catch (Exception $e) {
+            DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -123,7 +160,7 @@ class PetugasController extends Controller
         DB::beginTransaction();
 
         try {
-            $peminjaman = Peminjaman::with('detailPinjams')->lockForUpdate()->findOrFail($id);
+            $peminjaman = Peminjaman::with(['detailPinjams', 'user'])->lockForUpdate()->findOrFail($id);
 
             if ($peminjaman->status !== 'menunggu_pengembalian') {
                 throw new Exception("Pengembalian hanya dapat diterima setelah peminjam mengajukannya. Status saat ini: '{$peminjaman->status}'.");
@@ -141,12 +178,20 @@ class PetugasController extends Controller
                 'petugas_id' => auth()->id(),
             ]);
 
-            $peminjaman->update(['status' => $statusPeminjamanBaru]);
+            $peminjaman->update([
+                'status' => $statusPeminjamanBaru,
+                'stok_dicadangkan' => false,
+            ]);
 
             foreach ($peminjaman->detailPinjams as $detail) {
                 $alat = Alat::lockForUpdate()->findOrFail($detail->alat_id);
                 $alat->increment('stok', $detail->jumlah);
             }
+
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => "Petugas " . auth()->user()->name . " menerima pengembalian peminjaman #{$peminjaman->id} milik {$peminjaman->user->name}; kondisi: {$request->kondisi_kembali}; denda: Rp {$request->denda}; status akhir: {$statusPeminjamanBaru}.",
+            ]);
 
             DB::commit();
 

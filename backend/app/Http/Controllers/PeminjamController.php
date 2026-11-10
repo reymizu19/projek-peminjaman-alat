@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alat;
-use App\Models\Peminjaman;
 use App\Models\DetailPinjam;
 use App\Models\Kategori;
+use App\Models\LogAktivitas;
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -41,6 +42,10 @@ class PeminjamController extends Controller
             'alat_id.*' => 'integer|exists:alat,id',
             'jumlah' => 'required|array',
             'alasan' => 'required|string|max:500',
+        ], [
+            'alat_id.required' => 'Pilih minimal satu alat yang ingin dipinjam.',
+            'alat_id.array' => 'Pilihan alat tidak valid.',
+            'alat_id.min' => 'Pilih minimal satu alat yang ingin dipinjam.',
         ]);
 
         DB::beginTransaction();
@@ -59,16 +64,19 @@ class PeminjamController extends Controller
                 'tanggal_kembali_plan' => $tanggalKembaliPlan,
                 'alasan' => $request->alasan,
                 'status' => 'diajukan',
+                'stok_dicadangkan' => true,
             ]);
 
             // Masukkan daftar alat yang dipinjam ke detail_pinjam
             foreach ($request->alat_id as $alatId) {
                 $jumlah = (int) ($request->jumlah[$alatId] ?? 0);
-                $alat = Alat::findOrFail($alatId);
+                $alat = Alat::lockForUpdate()->findOrFail($alatId);
 
                 if ($jumlah < 1 || $jumlah > $alat->stok) {
                     throw new \RuntimeException("Jumlah alat {$alat->nama_alat} tidak valid.");
                 }
+
+                $alat->decrement('stok', $jumlah);
 
                 DetailPinjam::create([
                     'peminjaman_id' => $peminjaman->id,
@@ -76,6 +84,11 @@ class PeminjamController extends Controller
                     'jumlah' => $jumlah,
                 ]);
             }
+
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => "Peminjam " . auth()->user()->name . " mengajukan peminjaman #{$peminjaman->id}.",
+            ]);
 
             DB::commit();
 
@@ -85,7 +98,7 @@ class PeminjamController extends Controller
             DB::rollBack();
 
             return redirect()->back()
-                ->with('error', 'Gagal mengajukan peminjaman: ' . $e->getMessage());
+                ->with('error', 'Gagal mengajukan peminjaman: '.$e->getMessage());
         }
     }
 
@@ -108,10 +121,17 @@ class PeminjamController extends Controller
             return redirect()->back()->with('error', 'Peminjaman ini tidak dapat diajukan untuk dikembalikan.');
         }
 
-        $peminjaman->update([
-            'status' => 'menunggu_pengembalian',
-            'pengembalian_diajukan_at' => now(),
-        ]);
+        DB::transaction(function () use ($peminjaman) {
+            $peminjaman->update([
+                'status' => 'menunggu_pengembalian',
+                'pengembalian_diajukan_at' => now(),
+            ]);
+
+            LogAktivitas::create([
+                'user_id' => auth()->id(),
+                'aktivitas' => "Peminjam " . auth()->user()->name . " mengajukan pengembalian untuk peminjaman #{$peminjaman->id}.",
+            ]);
+        });
 
         return redirect()->route('peminjam.peminjaman.saya')
             ->with('success', 'Permintaan pengembalian berhasil dikirim. Menunggu pemeriksaan petugas.');
@@ -133,9 +153,15 @@ class PeminjamController extends Controller
     {
         $this->ensureEditable($peminjaman);
 
-        $alats = Alat::with('kategori')->where('stok', '>', 0)->orderBy('nama_alat')->get();
-        $kategoris = Kategori::orderBy('nama_kategori')->get();
         $selected = $peminjaman->detailPinjams->keyBy('alat_id');
+        $alats = Alat::with('kategori')
+            ->where(function ($query) use ($selected) {
+                $query->where('stok', '>', 0)
+                    ->orWhereIn('id', $selected->keys());
+            })
+            ->orderBy('nama_alat')
+            ->get();
+        $kategoris = Kategori::orderBy('nama_kategori')->get();
 
         return view('peminjam.peminjaman.edit', compact('peminjaman', 'alats', 'kategoris', 'selected'));
     }
@@ -169,15 +195,42 @@ class PeminjamController extends Controller
             }
 
             if ($request->filled('alat_id')) {
+                $details = $peminjaman->detailPinjams()->get();
+                $reserved = ($peminjaman->stok_dicadangkan ? $details : collect())->groupBy('alat_id')
+                    ->map(fn ($items) => $items->sum('jumlah'));
+                $requested = [];
+
+                foreach ($request->alat_id as $alatId) {
+                    $requested[$alatId] = ($requested[$alatId] ?? 0) + (int) ($request->jumlah[$alatId] ?? 0);
+                }
+
+                $alatIds = $reserved->keys()->merge(array_keys($requested))->unique()->sort();
+                $alats = Alat::whereIn('id', $alatIds)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+
+                foreach ($requested as $alatId => $jumlah) {
+                    $alat = $alats->get($alatId);
+
+                    if (! $alat || $jumlah < 1 || $jumlah > $alat->stok + ($reserved[$alatId] ?? 0)) {
+                        throw new \RuntimeException('Jumlah alat tidak valid atau stok tidak mencukupi.');
+                    }
+                }
+
+                foreach ($alatIds as $alatId) {
+                    $selisih = ($requested[$alatId] ?? 0) - ($reserved[$alatId] ?? 0);
+                    $alat = $alats->get($alatId);
+
+                    if ($selisih > 0) {
+                        $alat->decrement('stok', $selisih);
+                    } elseif ($selisih < 0) {
+                        $alat->increment('stok', abs($selisih));
+                    }
+                }
+
                 $peminjaman->detailPinjams()->delete();
+                $peminjaman->update(['stok_dicadangkan' => true]);
 
                 foreach ($request->alat_id as $alatId) {
                     $jumlah = (int) ($request->jumlah[$alatId] ?? 0);
-                    $alat = Alat::findOrFail($alatId);
-
-                    if ($jumlah < 1 || $jumlah > $alat->stok) {
-                        throw new \RuntimeException("Jumlah alat {$alat->nama_alat} tidak valid.");
-                    }
 
                     DetailPinjam::create([
                         'peminjaman_id' => $peminjaman->id,
@@ -194,8 +247,17 @@ class PeminjamController extends Controller
     public function destroyPeminjaman(Peminjaman $peminjaman)
     {
         $this->ensureEditable($peminjaman);
-        $peminjaman->detailPinjams()->delete();
-        $peminjaman->delete();
+
+        DB::transaction(function () use ($peminjaman) {
+            foreach ($peminjaman->detailPinjams as $detail) {
+                if ($peminjaman->stok_dicadangkan) {
+                    Alat::lockForUpdate()->findOrFail($detail->alat_id)->increment('stok', $detail->jumlah);
+                }
+            }
+
+            $peminjaman->detailPinjams()->delete();
+            $peminjaman->delete();
+        });
 
         return redirect()->route('peminjam.peminjaman.saya')->with('success', 'Pengajuan peminjaman berhasil dihapus.');
     }
@@ -205,5 +267,4 @@ class PeminjamController extends Controller
         abort_unless($peminjaman->user_id === auth()->id(), 403);
         abort_unless($peminjaman->status === 'diajukan', 403);
     }
-
 }

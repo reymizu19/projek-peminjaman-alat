@@ -28,11 +28,11 @@
             <div class="p-5 border-b border-gray-200 bg-white grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="tgl_kembali_plan" class="block text-gray-700 text-sm font-semibold mb-2">Rencana Tanggal Kembali</label>
-                    <input id="tgl_kembali_plan" type="date" name="tgl_kembali_plan" min="{{ now()->addDay()->format('Y-m-d') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input id="tgl_kembali_plan" type="date" name="tgl_kembali_plan" value="{{ old('tgl_kembali_plan') }}" min="{{ now()->addDay()->format('Y-m-d') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label for="alasan" class="block text-gray-700 text-sm font-semibold mb-2">ALASAN PENGAJUAN</label>
-                    <input id="alasan" type="text" name="alasan" maxlength="500" required placeholder="Contoh: Praktik kelas" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input id="alasan" type="text" name="alasan" value="{{ old('alasan') }}" maxlength="500" required placeholder="Contoh: Praktik kelas" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
 
@@ -52,19 +52,19 @@
                     <tbody class="text-gray-700 text-sm">
                         @forelse($alats as $alat)
                             <tr class="hover:bg-gray-50 transition align-middle">
-                                <td class="py-3 px-4 border-b"><input type="checkbox" name="alat_id[]" value="{{ $alat->id }}" class="alat-check h-4 w-4 text-blue-600" @disabled($alat->stok < 1)></td>
+                                <td class="py-3 px-4 border-b"><input type="checkbox" name="alat_id[]" value="{{ $alat->id }}" class="alat-check h-4 w-4 text-blue-600" @checked(in_array($alat->id, old('alat_id', []))) @disabled($alat->stok < 1)></td>
                                 <td class="py-3 px-4 border-b">
                                     @if($alat->gambar)
-                                        <img src="{{ Storage::disk('public')->url($alat->gambar) }}" alt="{{ $alat->nama_alat }}" class="w-14 h-14 object-cover rounded-lg border border-gray-200">
+                                        <img src="{{ asset('storage/' . $alat->gambar) }}" alt="{{ $alat->nama_alat }}" onerror="this.onerror=null;this.src='{{ asset('images/alat-placeholder.svg') }}'" class="w-14 h-14 object-cover rounded-lg border border-gray-200">
                                     @else
-                                        <div class="w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-[10px] text-gray-400 text-center">Tidak ada foto</div>
+                                        <img src="{{ asset('images/alat-placeholder.svg') }}" alt="Foto {{ $alat->nama_alat }} belum tersedia" class="w-14 h-14 object-cover rounded-lg border border-gray-200">
                                     @endif
                                 </td>
                                 <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $alat->nama_alat }}</td>
                                 <td class="py-3 px-4 border-b">{{ $alat->kategori->nama_kategori ?? '-' }}</td>
                                 <td class="py-3 px-4 border-b font-semibold">{{ $alat->stok }}</td>
                                 <td class="py-3 px-4 border-b"><span class="px-2.5 py-1 text-xs font-semibold rounded-full {{ $alat->stok > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600' }}">{{ $alat->stok > 0 ? 'Tersedia' : 'Sedang dipinjam' }}</span></td>
-                                <td class="py-3 px-4 border-b"><input type="number" name="jumlah[{{ $alat->id }}]" value="1" min="1" max="{{ $alat->stok }}" {{ $alat->stok < 1 ? 'disabled' : '' }} class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"></td>
+                                <td class="py-3 px-4 border-b"><input type="number" name="jumlah[{{ $alat->id }}]" value="{{ old('jumlah.' . $alat->id, 1) }}" min="1" max="{{ $alat->stok }}" {{ $alat->stok < 1 ? 'disabled' : '' }} class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"></td>
                             </tr>
                         @empty
                             <tr><td colspan="7" class="py-6 text-center text-gray-500">Belum ada data alat.</td></tr>
@@ -80,8 +80,11 @@
     </div>
 
     <script>
-        document.querySelectorAll('.alat-check').forEach((checkbox) => checkbox.addEventListener('change', () => {
+        const updateSelectedCount = () => {
             document.getElementById('selected-count').textContent = document.querySelectorAll('.alat-check:checked').length;
-        }));
+        };
+
+        document.querySelectorAll('.alat-check').forEach((checkbox) => checkbox.addEventListener('change', updateSelectedCount));
+        updateSelectedCount();
     </script>
 @endsection

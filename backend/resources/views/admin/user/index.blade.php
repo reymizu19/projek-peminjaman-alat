@@ -38,6 +38,7 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-100 text-gray-600 text-sm uppercase tracking-wider">
+                        <th class="py-3 px-4 border-b">Foto</th>
                         <th class="py-3 px-4 border-b">Nama</th>
                         <th class="py-3 px-4 border-b">Email</th>
                         <th class="py-3 px-4 border-b">Role / Hak Akses</th>
@@ -49,6 +50,13 @@
                 <tbody class="text-gray-700 text-sm">
                     @forelse($users as $user)
                         <tr class="hover:bg-gray-50 transition">
+                            <td class="py-3 px-4 border-b">
+                                <img
+                                    src="{{ $user->foto_profil ? asset('storage/' . $user->foto_profil) : asset('images/profile-placeholder.svg') }}"
+                                    alt="Foto profil {{ $user->name }}"
+                                    onerror="this.onerror=null;this.src='{{ asset('images/profile-placeholder.svg') }}'"
+                                    class="h-10 w-10 rounded-full border border-gray-200 object-cover">
+                            </td>
                             <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $user->name }}</td>
                             <td class="py-3 px-4 border-b">{{ $user->email }}</td>
                             <td class="py-3 px-4 border-b">
@@ -79,7 +87,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-4 text-center text-gray-500">Belum ada data pengguna.</td>
+                            <td colspan="6" class="py-4 text-center text-gray-500">Belum ada data pengguna.</td>
                         </tr>
                     @endforelse
                 </tbody>

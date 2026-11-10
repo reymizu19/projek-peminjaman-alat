@@ -48,15 +48,15 @@
                                 <td class="py-3 px-4 border-b"><input type="checkbox" name="alat_id[]" value="{{ $alat->id }}" class="h-4 w-4 text-blue-600" @checked($detail)></td>
                                 <td class="py-3 px-4 border-b">
                                     @if($alat->gambar)
-                                        <img src="{{ Storage::disk('public')->url($alat->gambar) }}" alt="{{ $alat->nama_alat }}" class="w-14 h-14 object-cover rounded-lg border border-gray-200">
+                                        <img src="{{ asset('storage/' . $alat->gambar) }}" alt="{{ $alat->nama_alat }}" onerror="this.onerror=null;this.src='{{ asset('images/alat-placeholder.svg') }}'" class="w-14 h-14 object-cover rounded-lg border border-gray-200">
                                     @else
-                                        <div class="w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-[10px] text-gray-400 text-center">Tidak ada foto</div>
+                                        <img src="{{ asset('images/alat-placeholder.svg') }}" alt="Foto {{ $alat->nama_alat }} belum tersedia" class="w-14 h-14 object-cover rounded-lg border border-gray-200">
                                     @endif
                                 </td>
                                 <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $alat->nama_alat }}</td>
                                 <td class="py-3 px-4 border-b">{{ $alat->kategori->nama_kategori ?? '-' }}</td>
                                 <td class="py-3 px-4 border-b font-semibold">{{ $alat->stok }}</td>
-                                <td class="py-3 px-4 border-b"><input type="number" name="jumlah[{{ $alat->id }}]" value="{{ old('jumlah.' . $alat->id, $detail->jumlah ?? 1) }}" min="1" max="{{ $alat->stok }}" class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"></td>
+                                <td class="py-3 px-4 border-b"><input type="number" name="jumlah[{{ $alat->id }}]" value="{{ old('jumlah.' . $alat->id, $detail->jumlah ?? 1) }}" min="1" max="{{ $alat->stok + ($detail->jumlah ?? 0) }}" class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"></td>
                             </tr>
                         @empty
                             <tr><td colspan="6" class="py-6 text-center text-gray-500">Tidak ada alat tersedia.</td></tr>

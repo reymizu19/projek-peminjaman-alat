@@ -15,9 +15,12 @@
     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
 
         <div class="p-5 border-b border-gray-200 bg-gray-50">
-            <h3 class="text-lg font-bold text-gray-800">
-                Log Aktivitas Terbaru
-            </h3>
+            <div class="flex items-center justify-between gap-4">
+                <h3 class="text-lg font-bold text-gray-800">Log Aktivitas Terbaru</h3>
+                <a href="{{ route('admin.log-aktivitas.index') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-900">
+                    Lihat semua
+                </a>
+            </div>
         </div>
 
         <div class="overflow-x-auto">

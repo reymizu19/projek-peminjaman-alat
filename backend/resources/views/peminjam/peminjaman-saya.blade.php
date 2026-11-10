@@ -68,7 +68,12 @@
                             <td class="py-3 px-4 border-b">
                                 <ul class="list-disc list-inside space-y-1 text-xs">
                                     @foreach($peminjaman->detailPinjams as $detail)
-                                        <li>
+                                        <li class="flex items-center gap-2">
+                                            <img
+                                                src="{{ $detail->alat?->gambar ? asset('storage/' . $detail->alat->gambar) : asset('images/alat-placeholder.svg') }}"
+                                                alt="Foto {{ $detail->alat->nama_alat ?? 'alat' }}"
+                                                onerror="this.onerror=null;this.src='{{ asset('images/alat-placeholder.svg') }}'"
+                                                class="h-10 w-10 rounded object-cover border border-gray-200">
                                             <span class="font-semibold">{{ $detail->alat->nama_alat ?? 'Alat Dihapus' }}</span>
                                             (Jumlah: {{ $detail->jumlah }})
                                         </li>

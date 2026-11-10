@@ -18,11 +18,11 @@
             @method('PUT')
 
             <div class="mb-6 flex items-center gap-4">
-                @if($user->foto_profil)
-                    <img src="{{ Storage::disk('public')->url($user->foto_profil) }}" alt="Foto profil {{ $user->name }}" class="h-20 w-20 rounded-full border border-gray-200 object-cover">
-                @else
-                    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 text-2xl font-bold text-gray-500">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
-                @endif
+                <img
+                    src="{{ $user->foto_profil ? asset('storage/' . $user->foto_profil) : asset('images/profile-placeholder.svg') }}"
+                    alt="Foto profil {{ $user->name }}"
+                    onerror="this.onerror=null;this.src='{{ asset('images/profile-placeholder.svg') }}'"
+                    class="h-20 w-20 rounded-full border border-gray-200 object-cover">
                 <div>
                     <p class="font-semibold text-gray-900">{{ $user->name }}</p>
                     <p class="text-sm text-gray-500">{{ $user->email }}</p>

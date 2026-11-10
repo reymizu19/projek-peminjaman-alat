@@ -55,9 +55,9 @@
                     <tr class="hover:bg-gray-50 transition">
                         <td class="py-3 px-4 border-b">
                             @if($alat->gambar)
-                                <img src="{{ Storage::disk('public')->url($alat->gambar) }}" alt="{{ $alat->nama_alat }}" class="w-12 h-12 object-cover rounded-lg border">
+                                <img src="{{ asset('storage/' . $alat->gambar) }}" alt="{{ $alat->nama_alat }}" onerror="this.onerror=null;this.src='{{ asset('images/alat-placeholder.svg') }}'" class="w-12 h-12 object-cover rounded-lg border">
                             @else
-                                <span class="text-xs text-gray-400 italic">Tidak ada</span>
+                                <img src="{{ asset('images/alat-placeholder.svg') }}" alt="Foto alat belum tersedia" class="w-12 h-12 object-cover rounded-lg border">
                             @endif
                         </td>
                         <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $alat->nama_alat }}</td>

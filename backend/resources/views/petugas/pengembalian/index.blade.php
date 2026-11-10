@@ -81,8 +81,13 @@
                             <td class="py-3 px-4 border-b align-top">
                                 <div class="space-y-1">
                                     @foreach($item->detailPinjams as $detail)
-                                        <div class="text-gray-700">
-                                            • {{ $detail->alat->nama_alat ?? 'Alat Dihapus' }} (Jumlah: {{ $detail->jumlah }})
+                                        <div class="flex items-center gap-2 text-gray-700">
+                                            <img
+                                                src="{{ $detail->alat?->gambar ? asset('storage/' . $detail->alat->gambar) : asset('images/alat-placeholder.svg') }}"
+                                                alt="Foto {{ $detail->alat->nama_alat ?? 'alat' }}"
+                                                onerror="this.onerror=null;this.src='{{ asset('images/alat-placeholder.svg') }}'"
+                                                class="h-10 w-10 rounded object-cover border border-gray-200">
+                                            <span>{{ $detail->alat->nama_alat ?? 'Alat Dihapus' }} (Jumlah: {{ $detail->jumlah }})</span>
                                         </div>
                                     @endforeach
                                 </div>
